@@ -1,6 +1,17 @@
 @ClipboardSyncServer_HostAddress = http://localhost:5292
 
-GET {{ClipboardSyncServer_HostAddress}}/weatherforecast/
+POST {{ClipboardSyncServer_HostAddress}}/api/clipboard
+Content-Type: application/json
 Accept: application/json
 
+{
+  "Device": "pc",
+  "Data": "Sample clipboard data",
+  "DeviceName": "My PC"
+}
+
 ###
+
+### Get Clipboard Data
+GET {{ClipboardSyncServer_HostAddress}}/api/clipboard?device=pc
+Accept: application/json

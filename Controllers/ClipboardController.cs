@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ClipboardSyncServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 
 namespace ClipboardSyncServer.Controllers
@@ -7,21 +9,30 @@ namespace ClipboardSyncServer.Controllers
     [ApiController]
     public class ClipboardController : ControllerBase
     {
-        private static Dictionary<string, string> clipboardData = new Dictionary<string, string>
+        private readonly ILogger<ClipboardController> _logger;
+
+        private static Dictionary<string, ClipboardData> clipboardData = new Dictionary<string, ClipboardData>
         {
-            { "phone", "" },
-            { "pc", "" }
+            { "phone", new ClipboardData() },
+            { "pc", new ClipboardData() }
         };
+
+        public ClipboardController(ILogger<ClipboardController> logger)
+        {
+            _logger = logger;
+        }
 
         [HttpPost]
         public IActionResult UpdateClipboard([FromBody] ClipboardData data)
         {
-            if (data == null || string.IsNullOrEmpty(data.Device) || string.IsNullOrEmpty(data.Data))
+            if (data == null || string.IsNullOrEmpty(data.Device) || string.IsNullOrEmpty(data.Data) || string.IsNullOrEmpty(data.DeviceName))
             {
+                _logger.LogWarning("Invalid data received for clipboard update.");
                 return BadRequest("Invalid data.");
             }
 
-            clipboardData[data.Device] = data.Data;
+            clipboardData[data.Device] = data;
+            _logger.LogInformation($"Clipboard data updated for device: {data.Device}");
             return Ok(new { success = true });
         }
 
@@ -30,11 +41,14 @@ namespace ClipboardSyncServer.Controllers
         {
             if (string.IsNullOrEmpty(device) || !clipboardData.ContainsKey(device))
             {
+                _logger.LogWarning("Invalid device requested for clipboard data.");
                 return BadRequest("Invalid device.");
             }
 
             var otherDevice = device == "pc" ? "phone" : "pc";
-            return Ok(new { data = clipboardData[otherDevice] });
+            var data = clipboardData[otherDevice];
+            _logger.LogInformation($"Clipboard data retrieved for device: {device}");
+            return Ok(data);
         }
     }
 }
